@@ -1,0 +1,25 @@
+[project]
+name = "prism_downloader"            # underscores (no hyphens)
+version = "0.1.0"
+description = "PRISM daily downloader and single-variable monthly/annual assembler"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "Stephen M. Westenbroek" }]
+dependencies = [
+  "requests",
+  "xarray>=2023.6.0",
+  "numpy",
+  "pandas",
+  "dask",
+  "tqdm",
+]
+
+[project.scripts]
+prism_downloader = "prism_downloader.prism_downloader:main"  # CLI with underscores
+
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
