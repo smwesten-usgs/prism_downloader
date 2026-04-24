@@ -334,6 +334,32 @@ def stack_period(nc_files: List[Path],
     # Keep the 'crs' grid mapping variable if present
     ds_out = combined.to_dataset(name=out_var_name)
 
+    # Choose a small reference date so time values fit in int32 for a single year/month
+    ref_date = pd.to_datetime(ds_out['time'].values[0]).strftime('%Y-%m-%d 00:00:00')
+
+    # Variable (data) encoding as you already have
+    t_chunk = min(31, ds_out.sizes.get("time", 31))
+    lat_chunk = min(512, ds_out.sizes.get("lat", 512))
+    lon_chunk = min(512, ds_out.sizes.get("lon", 512))
+
+    var_enc = {
+        out_var_name: {
+            "zlib": True,
+            "complevel": 3,
+            "shuffle": True,
+            "chunksizes": (t_chunk, lat_chunk, lon_chunk),
+        }
+    }
+
+    # Time coordinate encoding: int16 or int32 + CF units/calendar
+    time_enc = {
+        "time": {
+            "dtype": "int32",  # or "int32" if you prefer
+            "units": f"days since {ref_date}",
+            "calendar": "proleptic_gregorian",
+        }
+    }
+
     # CF-friendly numeric grid-mapping variable (no char => no string1 dim)
     ds_out[out_var_name].attrs["grid_mapping"] = "crs"
     if "crs" in ds:
@@ -351,21 +377,7 @@ def stack_period(nc_files: List[Path],
         "Conventions": "CF-1.9",
     })  # [1](https://acdguide.github.io/Governance/tech/compression.html)[2](https://data-infrastructure-services.gitlab-pages.dkrz.de/tutorials-and-use-cases/tutorial_compression_netcdf.html)
 
-    # Write compressed single-variable netCDF
-    time_chunk = min(31, combined.sizes.get("time", 31))
-    lat_chunk  = min(512, combined.sizes.get("lat", 512))
-    lon_chunk  = min(512, combined.sizes.get("lon", 512))
-
-    enc = {
-        out_var_name: {
-            "zlib": True,
-            "complevel": 3,
-            "shuffle": True,
-            "chunksizes": (time_chunk, lat_chunk, lon_chunk),
-            # Optional: enforce dtype (float32) to match Band1 typical type
-            # "dtype": "float32"
-        }
-    }
+    enc = {**var_enc, **time_enc}
 
     print(f"writing data to netCDF: {out_nc}")
     ds_out.to_netcdf(out_nc, encoding=enc, engine="h5netcdf")
