@@ -18,7 +18,9 @@ git clone https://github.com/smwesten-usgs/prism_downloader.git
 cd prism_downloader
 
 2. Install in editable mode
+```python
 python -m pip install -e .
+```
 
 This installs:
 
@@ -34,7 +36,7 @@ usage: prism_downloader {ppt,tmin,tmax} start_date end_date
                         [-h] 
                         [--output_dir OUTPUT_DIR] 
                         [--zipfile_dir ZIPFILE_DIR]
-                         [--netcdf_dir NETCDF_DIR]
+                        [--netcdf_dir NETCDF_DIR]
                         [--ca_bundle CA_BUNDLE] 
                         [--resolution {4km,800m}]
                         [--stack_by {monthly,yearly}]
