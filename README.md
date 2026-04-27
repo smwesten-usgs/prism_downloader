@@ -102,7 +102,7 @@ Below is a high-level description of how the package works internally. This sect
 1. Data Source Overview
 PRISM’s time-series web service provides one daily grid per HTTP request:
 
-URL format: https://services.nacse.org/prism/data/get/<region>/<resolution>/<var>/<yyyymmdd>?format=nc
+URL format: `https://services.nacse.org/prism/data/get/<region>/<resolution>/<var>/<yyyymmdd>?format=nc`
 The ?format=nc option returns a ZIP containing: A NetCDF file (Band1(lat, lon))
 Metadata files (.xml, .prj, etc.)
 Supported variables include: ppt, tmin, tmax, tmean, etc.
