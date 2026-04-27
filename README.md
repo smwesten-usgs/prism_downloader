@@ -14,7 +14,7 @@ Expose a CLI.
 
 # Installation
 1. Clone the repository
-git clone https://github.com/yourname/prism_downloader.git
+git clone https://github.com/smwesten-usgs/prism_downloader.git
 cd prism_downloader
 
 2. Install in editable mode
@@ -25,8 +25,6 @@ This installs:
 The importable Python package prism_downloader.
 A CLI command named:
 prism_downloader
-
-(Everything uses underscores—no hyphens—to avoid import and naming ambiguity.)
 
 Command-line usage
 ```
