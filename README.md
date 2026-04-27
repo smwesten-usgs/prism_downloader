@@ -180,7 +180,8 @@ wisco__PRISM_ppt_us_4km_1999.nc
 The prefix is optional. If omitted, filenames have no leading underscores.
 
 8. Project Layout (src-style)
-```
+
+```bash
 prism_downloader/
 ├─ pyproject.toml
 ├─ README.md
