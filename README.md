@@ -1,7 +1,7 @@
 # prism_downloader
 [WIP] Python package to download daily PRISM files, stack them on a monthly or annual basis, and subset spatially if desired.
 
-A simple, explicit, and robust toolchain for downloading daily PRISM climate grids (via the PRISM time-series web service), optionally subsetting them to a bounding box, and assembling single-variable monthly or annual CF-compliant NetCDF files.
+A script for downloading daily PRISM climate grids (via the PRISM time-series web service), optionally subsetting them to a bounding box, and assembling single-variable monthly or annual CF-compliant NetCDF files.
 This project is intentionally minimal: one variable per run, clear directory structure, resumable downloads.
 
 ## Goals of this package
