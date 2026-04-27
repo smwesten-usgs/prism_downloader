@@ -106,8 +106,8 @@ URL format: `https://services.nacse.org/prism/data/get/<region>/<resolution>/<va
 The ?format=nc option returns a ZIP containing: A NetCDF file (Band1(lat, lon))
 Metadata files (.xml, .prj, etc.)
 Supported variables include: ppt, tmin, tmax, tmean, etc.
-Supported resolutions: 4km and 800m (API tokens).
-The downloader uses polite request pacing to avoid server throttling.
+Supported resolutions: 4km and 800m.
+The downloader uses request pacing (default 2 sec) to avoid server throttling.
 
 2. Daily Workflow
 For each date in the user-provided range:
