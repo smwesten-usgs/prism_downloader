@@ -145,7 +145,11 @@ def expected_zip_name(region: str,
     return f"prism_{element}_{region}_{resolution}_{date.strftime('%Y%m%d')}.zip"
 
 
-def polite_get(url: str, sleep_seconds: float = 2.0) -> requests.Response:
+def polite_get(
+        url: str,
+        sleep_seconds: float = 2.0, 
+        ca_bundle: Optional[Path | None] = None,
+        ) -> requests.Response:
     """Streaming GET with a short delay (polite to PRISM servers).
 
     Args:
@@ -158,10 +162,12 @@ def polite_get(url: str, sleep_seconds: float = 2.0) -> requests.Response:
     Raises:
         requests.HTTPError: If request fails.
     """
-    resp = requests.get(url, stream=True, timeout=60)
+    verify_arg = str(ca_bundle) if ca_bundle else True
+    resp = requests.get(url, stream=True, timeout=60, verify=verify_arg)
     time.sleep(sleep_seconds)
     resp.raise_for_status()
     return resp
+
 
 
 def download_daily_zip(region: Literal["us"],
@@ -169,7 +175,8 @@ def download_daily_zip(region: Literal["us"],
                        element: Literal["ppt", "tmin", "tmax"],
                        date: dt.date,
                        out_dir: Path,
-                       sleep_seconds: float = 2.0) -> Path:
+                       sleep_seconds: float = 2.0,
+                       ca_bundle: Path | None = None) -> Path:
     """Download a single daily ZIP (NetCDF bundle) if not present; else return it.
 
     Args:
@@ -193,7 +200,7 @@ def download_daily_zip(region: Literal["us"],
     # call build_url - obtain url to the file we are trying to download
     # from the PRISM website
     url = build_url(region, resolution, element, date)
-    resp = polite_get(url, sleep_seconds=sleep_seconds)
+    resp = polite_get(url, sleep_seconds=sleep_seconds, ca_bundle=ca_bundle)
     with open(out_zip, "wb") as f:
         for chunk in resp.iter_content(chunk_size=1 << 20):
             f.write(chunk)
@@ -396,6 +403,7 @@ def run_single_variable(element: Literal["ppt", "tmin", "tmax"],
                         bbox: Optional[Tuple[float, float, float, float]] = None,
                         sleep_seconds: float = 2.0,
                         output_prefix: str = "",
+                        ca_bundle: Path | None = None,
                         ) -> None:
     """Download daily ZIPs (NetCDF), extract, and stack 'Band1' monthly or yearly.
 
@@ -411,11 +419,15 @@ def run_single_variable(element: Literal["ppt", "tmin", "tmax"],
         bbox: 
         sleep_seconds: Delay between HTTP requests (server etiquette).
         output_prefix: text string to prepend to the output filenames.
+        ca_bundle: Path and filename of certificate to use when transferring via SSL.
 
     Returns:
         None
     """
-
+    # In Python, strings are truthy if their length > 0 and falsy if they’re empty ("").
+    # The following appends "__" when prefix_clean is a non‑empty 
+    # string (e.g., "wisconsin" → "wisconsin__").
+    # Yields "" when prefix_clean is empty (""), preventing a dangling "__".
     prefix_clean = (output_prefix or "").strip().replace(" ", "_")
     prefix = f"{prefix_clean}__" if prefix_clean else ""
 
@@ -448,7 +460,8 @@ def run_single_variable(element: Literal["ppt", "tmin", "tmax"],
     ):
     #for day in daterange(start_date, end_date):
         # Download ZIP (skip if present)
-        zip_path = download_daily_zip(region, resolution, element, day, zipfile_dir, sleep_seconds=sleep_seconds)
+        zip_path = download_daily_zip(region, resolution, element, day, zipfile_dir, 
+                                      sleep_seconds=sleep_seconds, ca_bundle=ca_bundle)
 
         # Extract .nc (skip if already extracted)
         daily_nc_name = f"{element}_{region}_{resolution}_{day.strftime('%Y%m%d')}.nc"
@@ -488,22 +501,29 @@ def build_cli() -> argparse.ArgumentParser:
         default=Path.cwd(),
         help="Directory where final monthly/yearly NetCDF(s) will be written (default: current working directory).",
     )
-
     p.add_argument(
         "--zipfile_dir",
         type=Path,
         help="Directory to store downloaded PRISM ZIP bundles. Default: a subfolder under --output_dir."
     )
-
     p.add_argument(
         "--netcdf_dir",
         type=Path,
         help="Directory to store extracted daily NetCDF files. Default: same as --zipfile_dir."
     )
+    p.add_argument(
+        "--ca_bundle",
+        type=Path,
+        default=None,
+        help="Path to a certificate file (or directory) that tells the downloader which "
+        "corporate or internal Certificate Authorities (CAs) to trust when making HTTPS requests. "
+        "Use this when your network performs TLS inspection or uses a private CA and you see "
+        "CERTIFICATE_VERIFY_FAILED errors.\n\n"
 
+    )
     p.add_argument("--resolution", choices=["4km", "800m"], default="4km",
                    help="Spatial resolution (default: 4km).")
-    p.add_argument("--stack-by", choices=["monthly", "yearly"], default="yearly",
+    p.add_argument("--stack_by", choices=["monthly", "yearly"], default="yearly",
                    help="Stack output by 'monthly' or 'yearly' (default: yearly).")
 
     # Optional bbox: lon_min lat_min lon_max lat_max
@@ -512,10 +532,10 @@ def build_cli() -> argparse.ArgumentParser:
                    help="Optional bounding box in degrees for subsetting.")
 
     # Keep your sleep/delay as-is; expose if you want
-    p.add_argument("--sleep-seconds", type=float, default=2.0,
+    p.add_argument("--sleep_seconds", type=float, default=2.0,
                    help="Delay between requests (default: 2.0).")
 
-    p.add_argument("--output-prefix", type=str, default="",
+    p.add_argument("--output_prefix", type=str, default="",
                    help="Optional prefix added to output filenames (e.g., 'wisconsin').")
 
     return p
@@ -538,6 +558,7 @@ def main():
         bbox=tuple(args.bbox) if args.bbox else None,
         sleep_seconds=args.sleep_seconds,
         output_prefix=args.output_prefix,
+        ca_bundle=args.ca_bundle,
     )
 
 
